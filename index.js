@@ -39,10 +39,14 @@ async function addd(obj){
 async function addData(req, res, callback){
     console.log(req.body);
     let data = req.body.genre.split(',');
+    let dt = req.body.links.split(',');
     let obj = {
         type: req.body.type,
         name: req.body.name,
-        genre: data
+        genre: data,
+        addedBy: req.body.user,
+        likes: 0,
+        links: dt
     };
     let dat = await callback(obj);
     console.log(dat);
@@ -55,9 +59,32 @@ async function addData(req, res, callback){
 
 app.post('/register', async (req, res) => {
     console.log(req.body);
-    let obj = new users( req.body );
+    let usr = req.body;
+    usr['followers'] = [];
+    usr['following'] = [];
+    usr['favourite'] = [];
+    usr['watched'] = [];
+    let obj = new users( usr );
     let resu = await obj.save();
     res.json(resu);
+})
+
+app.post('/login', async(req, res) => {
+    console.log(req.body);
+    let user = req.body.username;
+    let details = await users.find({
+        username : `${user}`
+    });
+    if(details.password == req.body.password){
+        res.send('Login success')
+    }
+    else{
+        res.send('Login failed')
+    }
+})
+
+app.get('/dashboard', async (req, res) => {
+
 })
 
 
