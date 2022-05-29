@@ -4,10 +4,15 @@ const bodyParser =  require("body-parser");
 const mongoose = require('mongoose');
 const app = express();
 
+app.set('view engine', 'ejs');
+app.engine('ejs', require('ejs').__express); // Idk, Stackoverflow asked to do this
+
 app.use(express.json());
 app.use(express.urlencoded( {extended: true} ));
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
+
+app.use(express.static(__dirname + '/views'));
 
 // app.use(function(req, res, next) {
 //     res.header("Access-Control-Allow-Origin", "http://localhost:3000");
@@ -53,9 +58,9 @@ async function addData(req, res, callback){
     return (dat);
 }
 
-// app.get('/' , (req, res) => {
-//     res.send("ok");
-// })
+app.get('/' , (req, res) => {
+    res.render('index.ejs');
+})
 
 app.post('/register', async (req, res) => {
     console.log(req.body);
@@ -64,9 +69,18 @@ app.post('/register', async (req, res) => {
     usr['following'] = [];
     usr['favourite'] = [];
     usr['watched'] = [];
-    let obj = new users( usr );
-    let resu = await obj.save();
-    res.json(resu);
+    let data = await users.find({
+        username: `${req.body.username}`
+    });
+    console.log(data)
+    if(data.length > 0){
+        res.json({'message': 'user exists'})
+    }
+    else{
+        let obj = new users( usr );
+        let resu = await obj.save();
+        res.json(resu);
+    }
 })
 
 app.post('/login', async(req, res) => {
@@ -75,12 +89,17 @@ app.post('/login', async(req, res) => {
     let details = await users.find({
         username : `${user}`
     });
-    if(details.password == req.body.password){
+
+    if(details[0].password == req.body.password){
         res.send('Login success')
     }
     else{
         res.send('Login failed')
     }
+})
+
+app.get('/register', (req, res) => {
+    res.render('register.ejs', {})
 })
 
 app.get('/dashboard', async (req, res) => {
@@ -105,6 +124,22 @@ app.post('/getOnGenre', async (req, res) => {
         genre: `${g}`
     });
     res.json(data);
+})
+
+app.get('/login', (req, res) => {
+    res.render('login.ejs')
+})
+
+app.get('/about', (req, res) => {
+    res.render('about.ejs')
+})
+
+app.get('/products', (req, res) => {
+    res.render('products.ejs')
+})
+
+app.get('/store', (req, res) => {
+    res.render('store.ejs')
 })
 
 let port = 5000;
