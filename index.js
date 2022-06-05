@@ -2,10 +2,12 @@ const express = require('express');
 const mongo = require('mongodb');
 const bodyParser =  require("body-parser");
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const app = express();
 
 app.set('view engine', 'ejs');
-app.engine('ejs', require('ejs').__express); // Idk, Stackoverflow asked to do this
+app.engine('ejs', require('ejs').__express); 
 
 app.use(express.json());
 app.use(express.urlencoded( {extended: true} ));
@@ -13,13 +15,6 @@ app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
 
 app.use(express.static(__dirname + '/views'));
-
-// app.use(function(req, res, next) {
-//     res.header("Access-Control-Allow-Origin", "http://localhost:3000");
-//     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-//     res.header("Access-Control-Allow-Methods", "GET, PUT, POST, DELETE");
-//     next();
-//   });
 
 mongoose.connect('mongodb://localhost/Felicity', {useNewUrlParser: true, useUnifiedTopology: true});
 
@@ -91,6 +86,7 @@ app.post('/login', async(req, res) => {
     });
 
     if(details[0].password == req.body.password){
+        details[0].password = ""
         res.send('Login success')
     }
     else{
@@ -102,8 +98,8 @@ app.get('/register', (req, res) => {
     res.render('register.ejs', {})
 })
 
-app.get('/dashboard', async (req, res) => {
-
+app.get('/test', (req, res) => {
+    res.render('users.ejs')
 })
 
 
