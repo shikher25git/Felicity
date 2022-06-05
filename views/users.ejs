@@ -23,10 +23,10 @@
                 <div class="card-header border-primary">User Info</div>
                 <div class="card-body">
                   <ul>
-                      <li>Name</li>
-                      <li>Username</li>
-                      <li>Followers</li>
-                      <li>Following</li>
+                      <li>Name: <%=data[0].name%></li>
+                      <li>Username: <%=data[0].username%></li>
+                      <li>Followers (<%=data[0].followers.length%>)</li>
+                      <li>Following (<%=data[0].following.length%>)</li>
                   </ul>
                 </div>
               </div>
@@ -36,8 +36,8 @@
                 <div class="card-header border-primary">Content info</div>
                 <div class="card-body">
                   <ul>
-                    <li>Liked</li>
-                    <li>Watched</li>
+                    <li>Favourite (<%=data[0].favourite.length%>)</li>
+                    <li>Watched (<%=data[0].watched.length%>)</li>
                 </ul>
                 </div>
               </div>

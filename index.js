@@ -4,6 +4,7 @@ const bodyParser =  require("body-parser");
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const dotenv = require('dotenv').config();
+const cookieParser = require('cookie-parser')
 const jwt = require('jsonwebtoken');
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 app.use(express.urlencoded( {extended: true} ));
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
+app.use(cookieParser());
 
 app.use(express.static(__dirname + '/views'));
 
@@ -30,6 +32,22 @@ db.once('open', _ => {
 db.on('error', err => {
     console.log("err: ", err);
 })
+
+const verifyToken = (req, res, next) => {
+    if(typeof(req.headers.cookie) == 'undefined'){
+        next();
+    }
+    else{
+        let hash = (req.headers.cookie.split('=')[1]);
+        jwt.verify(hash, process.env.SECRET_KEY, (err, decoded) => {
+            if(err){
+            }
+            else
+            req.isLoggedIn = decoded;
+        })
+        next();
+    }
+};
 
 async function addd(obj){
     let objj = new content( obj );
@@ -68,16 +86,15 @@ app.post('/register', async (req, res) => {
     }
     else{
         let pass = req.body.password;
-        bcrypt.hash(pass, process.env.ITERATIONS, async (err, hash) => {
+        bcrypt.hash(pass, 12, async (err, hash) => {
             if(err){
                 throw err;
             }
             usr.password = hash;
             let obj = new users( usr );
             let resu = await obj.save();
-            res.redirect(resu, {message: 'Please login'});
+            res.redirect(301, '/login');
         })
-        
     }
 })
 
@@ -95,10 +112,11 @@ app.post('/login', async(req, res) => {
         if(err)
             throw err;
         if(resu){
-            jwt.sign({username: user}, process.env.SECRET_KEY, (err, token) => {
+            jwt.sign({username: user}, process.env.SECRET_KEY, {expiresIn: '1h'}, (err, token) => {
                 if(err)
                     throw err;
-                res.send(token)
+                res.cookie('token', token, {httpOnly: true} )
+                res.redirect('/dashboard')
             })
         }
         else{
@@ -108,11 +126,11 @@ app.post('/login', async(req, res) => {
 })
 
 app.get('/register', (req, res) => {
-    res.render('register.ejs', {})
-})
-
-app.get('/test', (req, res) => {
-    res.render('users.ejs')
+    if(typeof(req.isLoggedIn) == 'undefined'){
+        res.render('register.ejs');
+    }
+    console.log(req.isLoggedIn);
+    res.redirect('/dashboard');
 })
 
 
@@ -135,8 +153,28 @@ app.post('/getOnGenre', async (req, res) => {
     res.json(data);
 })
 
-app.get('/login', (req, res) => {
-    res.render('login.ejs')
+app.get('/logout', (req, res) => {
+    res.clearCookie('token');
+    res.redirect('/')
+})
+
+app.get('/dashboard', verifyToken, async (req, res) => {
+    if(typeof(req.isLoggedIn) == 'undefined'){
+        res.sendStatus(403);
+    }
+    let data = await users.find({
+        username: `${req.isLoggedIn.username}`
+    });
+    console.log(data);
+    res.render('users.ejs', {data})
+})
+
+app.get('/login', verifyToken, (req, res) => {
+    if(typeof(req.isLoggedIn) == 'undefined'){
+        res.render('login.ejs');
+    }
+    console.log(req.isLoggedIn);
+    res.redirect('/dashboard');
 })
 
 app.get('/about', (req, res) => {
@@ -151,8 +189,6 @@ app.get('/store', (req, res) => {
     res.render('store.ejs')
 })
 
-let port = 5000;
-
-app.listen(port, () => {
-    console.log(`Running on port ${port}`);
+app.listen(process.env.PORT, () => {
+    console.log(`Running on port ${process.env.PORT}`);
 })
