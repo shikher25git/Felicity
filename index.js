@@ -3,6 +3,7 @@ const mongo = require('mongodb');
 const bodyParser =  require("body-parser");
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const dotenv = require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const app = express();
 
@@ -45,7 +46,6 @@ async function addData(req, res, callback){
         name: req.body.name,
         genre: data,
         addedBy: req.body.user,
-        likes: 0,
         links: dt
     };
     let dat = await callback(obj);
@@ -60,21 +60,24 @@ app.get('/' , (req, res) => {
 app.post('/register', async (req, res) => {
     console.log(req.body);
     let usr = req.body;
-    usr['followers'] = [];
-    usr['following'] = [];
-    usr['favourite'] = [];
-    usr['watched'] = [];
     let data = await users.find({
         username: `${req.body.username}`
     });
-    console.log(data)
     if(data.length > 0){
         res.json({'message': 'user exists'})
     }
     else{
-        let obj = new users( usr );
-        let resu = await obj.save();
-        res.json(resu);
+        let pass = req.body.password;
+        bcrypt.hash(pass, process.env.ITERATIONS, async (err, hash) => {
+            if(err){
+                throw err;
+            }
+            usr.password = hash;
+            let obj = new users( usr );
+            let resu = await obj.save();
+            res.redirect(resu, {message: 'Please login'});
+        })
+        
     }
 })
 
@@ -84,14 +87,24 @@ app.post('/login', async(req, res) => {
     let details = await users.find({
         username : `${user}`
     });
-
-    if(details[0].password == req.body.password){
-        details[0].password = ""
-        res.send('Login success')
+    console.log(details)
+    if(details.length == 0){
+        res.send('not found')
     }
-    else{
-        res.send('Login failed')
-    }
+    bcrypt.compare(req.body.password, details[0].password, (err, resu) => {
+        if(err)
+            throw err;
+        if(resu){
+            jwt.sign({username: user}, process.env.SECRET_KEY, (err, token) => {
+                if(err)
+                    throw err;
+                res.send(token)
+            })
+        }
+        else{
+            res.send('failed')
+        }
+    })
 })
 
 app.get('/register', (req, res) => {
