@@ -57,22 +57,33 @@ async function addd(obj){
 
 async function addData(req, res, callback){
     console.log(req.body);
-    let data = req.body.genre.split(',');
-    let dt = req.body.links.split(',');
+    let data = req.body.genre.split(', ');
+    let dt = req.body.links.split(', ');
     let obj = {
         type: req.body.type,
         name: req.body.name,
         genre: data,
-        addedBy: req.body.user,
-        links: dt
+        addedBy: req.body.username,
+        links: dt,
+        description: req.body.description
     };
+    console.log(obj)
     let dat = await callback(obj);
     console.log(dat);
     return (dat);
 }
 
-app.get('/' , (req, res) => {
-    res.render('index.ejs');
+app.get('/' , verifyToken, async(req, res) => {
+    if(typeof(req.isLoggedIn) != 'undefined'){
+        let data = await users.find({
+            username: `${req.isLoggedIn.username}`
+        });
+        let isLoggedIn = req.isLoggedIn;
+        res.render('index.ejs', {data, isLoggedIn});
+    }
+    else{
+        res.render('index.ejs');
+    }
 })
 
 app.post('/register', async (req, res) => {
@@ -125,7 +136,7 @@ app.post('/login', async(req, res) => {
     })
 })
 
-app.get('/register', (req, res) => {
+app.get('/register', verifyToken, (req, res) => {
     if(typeof(req.isLoggedIn) == 'undefined'){
         res.render('register.ejs');
     }
@@ -166,7 +177,8 @@ app.get('/dashboard', verifyToken, async (req, res) => {
         username: `${req.isLoggedIn.username}`
     });
     console.log(data);
-    res.render('users.ejs', {data})
+    let isLoggedIn = req.isLoggedIn;
+    res.render('users.ejs', {data, isLoggedIn})
 })
 
 app.get('/login', verifyToken, (req, res) => {
@@ -177,9 +189,18 @@ app.get('/login', verifyToken, (req, res) => {
     res.redirect('/dashboard');
 })
 
-app.get('/about', (req, res) => {
-    res.render('about.ejs')
+app.get('/addContent', verifyToken, (req, res) => {
+    if(typeof(req.isLoggedIn) == 'undefined'){
+        res.sendStatus(403);
+    }
+    let isLoggedIn = req.isLoggedIn;
+    let userCred = req.isLoggedIn
+    res.render('addContent.ejs', { userCred, isLoggedIn })
 })
+
+// app.post('/addContent', (req, res) => {
+//     res.json(req.body)
+// })
 
 app.get('/products', (req, res) => {
     res.render('products.ejs')

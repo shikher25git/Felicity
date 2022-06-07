@@ -8,6 +8,9 @@ const ContentSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    description: {
+        type: String
+    },
     genre: {
         type: Array,
         default: []
@@ -17,12 +20,12 @@ const ContentSchema = new mongoose.Schema({
         required: true
     },
     likes: {
-        type: Number,
-        default: 0
+        type: Array,
+        default: []
     },
     links: {
         type: Array,
         default: []
     }
-}) ;
+});
 module.exports = mongoose.model("Content", ContentSchema);
